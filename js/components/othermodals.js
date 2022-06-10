@@ -1,12 +1,12 @@
 class StartModal extends HTMLElement {
-    connectedCallback() {
-        this.innerHTML = `
+  connectedCallback() {
+    this.innerHTML = `
             <div class="modal" id="start-modal">
-                <div class="modal-background"></div>
+                <div class="modal-background"><img class="modal-background-start-image" src="../../img/start_background.png"></div>
                 <div class="modal-content is-medium is-fullheight-mobile">
                     <div class="box">
-                        <div class="width-is-two-thirds">
-                            <div class="openedc-title">
+                        <div class="width-is-three-quarters">
+                            <div class="openedc-title mb-5">
                                 <figure class="image is-64x64 mr-2">
                                     <img src="./img/title-logo.png">
                                 </figure>
@@ -15,15 +15,14 @@ class StartModal extends HTMLElement {
                                     <h2 class="subtitle" i18n="start-title"></h2>
                                 </div>
                             </div>
-                            <hr>
                             <p class="mb-5" i18n-html="about-text-1"></p>
                             <p class="mb-5" i18n-html="about-text-2"></p>
-                            <p class="mb-5" i18n-html="start-text"></p>
-                            <div class="columns is-centered is-multiline">
-                                <div class="column is-6 p-1">
+                            <p class="mb-6" i18n-html="start-text"></p>
+                            <div class="columns is-justify-content-space-between">
+                                <div class="column p-1">
                                     <button class="button is-fullwidth" onclick="newProject()" i18n="new-project"></button>
                                 </div>
-                                <div class="column is-6 p-1">
+                                <div class="column p-1">
                                     <div class="file is-fullwidth" id="open-odm-button">
                                         <label class="file-label">
                                             <input class="file-input" type="file" accept=".xml,text/xml" name="odm-xml" onchange="openODM()">
@@ -31,10 +30,10 @@ class StartModal extends HTMLElement {
                                         </label>
                                     </div>
                                 </div>
-                                <div class="column is-6 p-1">
+                                <div class="column p-1">
                                     <button class="button is-fullwidth" onclick="openMDMLoadDialog(false)" i18n="load-from-mdm"></button>
                                 </div>
-                                <div class="column is-6 p-1">
+                                <div class="column p-1">
                                     <button class="button is-link is-fullwidth" onclick="loadExample()" i18n="example"></button>
                                 </div>
                             </div>
@@ -43,12 +42,12 @@ class StartModal extends HTMLElement {
                 </div>
             </div>
         `;
-    }
+  }
 }
 
 class LoginModal extends HTMLElement {
-    connectedCallback() {
-        this.innerHTML = `
+  connectedCallback() {
+    this.innerHTML = `
             <div class="modal" id="login-modal">
                 <div class="modal-background"></div>
                 <div class="modal-content is-medium">
@@ -95,16 +94,16 @@ class LoginModal extends HTMLElement {
                 </div>
             </div>
         `;
-    }
+  }
 }
 
 class AboutModal extends HTMLElement {
-    connectedCallback() {
-        const name = "Leonard Greulich";
-        const phone = "+49 (251) 83-54730";
-        const mail = "leonard.greulich@uni-muenster.de";
+  connectedCallback() {
+    const name = "Leonard Greulich";
+    const phone = "+49 (251) 83-54730";
+    const mail = "leonard.greulich@uni-muenster.de";
 
-        this.innerHTML = `
+    this.innerHTML = `
             <div class="modal" id="about-modal">
                 <div class="modal-background" onclick="hideAboutModal()"></div>
                 <div class="modal-content is-medium">
@@ -147,12 +146,12 @@ class AboutModal extends HTMLElement {
                 </div>
             </div>
         `;
-    }
+  }
 }
 
 class SubjectModal extends HTMLElement {
-    connectedCallback() {
-        this.innerHTML = `
+  connectedCallback() {
+    this.innerHTML = `
             <div class="modal" id="subject-modal">
                 <div class="modal-background" onclick="hideSubjectInfo()"></div>
                 <div class="modal-content is-large">
@@ -186,12 +185,12 @@ class SubjectModal extends HTMLElement {
                 </div>
             </div>
         `;
-    }
+  }
 }
 
 class SurveyCodeModal extends HTMLElement {
-    connectedCallback() {
-        this.innerHTML = `
+  connectedCallback() {
+    this.innerHTML = `
             <div class="modal" id="survey-code-modal">
                 <div class="modal-background"></div>
                 <div class="modal-content is-medium is-fullheight-mobile">
@@ -209,22 +208,38 @@ class SurveyCodeModal extends HTMLElement {
                 </div>
             </div>
         `;
-    }
+  }
 }
 
 // TODO: Move in own component .js file
 class MessageModal extends HTMLElement {
-    setHeading(heading) { this.heading = heading; }
-    setMessage(message) { this.message = message; }
-    setCallbacks(callbacks) { this.callbacks = callbacks; }
-    setCallbackType(callbackType) { this.callbackType = callbackType; }
-    setCloseText(closeText) { this.closeText = closeText; }
-    setCloseCallback(closeCallback) { this.closeCallback = closeCallback; }
-    setSize(size) { this.size = size; }
-    setIsSticky(isSticky) {this.isSticky = isSticky}
+  setHeading(heading) {
+    this.heading = heading;
+  }
+  setMessage(message) {
+    this.message = message;
+  }
+  setCallbacks(callbacks) {
+    this.callbacks = callbacks;
+  }
+  setCallbackType(callbackType) {
+    this.callbackType = callbackType;
+  }
+  setCloseText(closeText) {
+    this.closeText = closeText;
+  }
+  setCloseCallback(closeCallback) {
+    this.closeCallback = closeCallback;
+  }
+  setSize(size) {
+    this.size = size;
+  }
+  setIsSticky(isSticky) {
+    this.isSticky = isSticky;
+  }
 
-    connectedCallback() {
-        this.innerHTML = `
+  connectedCallback() {
+    this.innerHTML = `
             <div class="modal is-active" id="message-modal">
                 <div class="modal-background"></div>
                 <div class="modal-content ${this.size}">
@@ -237,52 +252,75 @@ class MessageModal extends HTMLElement {
             </div>
         `;
 
-        // Add buttons for callbacks
-        if (this.callbacks) {
-            for (const [text, callback] of Object.entries(this.callbacks)) {
-                let button = document.createElement("button");
-                button.classList = `button ${this.callbackType} is-small`;
-                button.textContent = text;
-                button.onclick = () => {
-                    this.remove();
-                    callback();
-                };
-                this.querySelector(".buttons").insertAdjacentElement("beforeend", button);
-            }
-        }
-        
-        // Add close button
+    // Add buttons for callbacks
+    if (this.callbacks) {
+      for (const [text, callback] of Object.entries(this.callbacks)) {
         let button = document.createElement("button");
-        button.classList = this.callbacks ? "button is-small" : "button is-link is-small";
-        button.textContent = this.closeText;
+        button.classList = `button ${this.callbackType} is-small`;
+        button.textContent = text;
         button.onclick = () => {
-            this.remove();
-            if (this.closeCallback) this.closeCallback();
+          this.remove();
+          callback();
         };
-        this.querySelector(".buttons").insertAdjacentElement("beforeend", button);
-
-        // Add event handler for clicking on the modal background
-        if(!this.isSticky) {
-            this.querySelector(".modal-background").onclick = () => {
-                this.remove();
-                if (this.closeCallback) this.closeCallback(); 
-            };
-        }
+        this.querySelector(".buttons").insertAdjacentElement(
+          "beforeend",
+          button
+        );
+      }
     }
+
+    // Add close button
+    let button = document.createElement("button");
+    button.classList = this.callbacks
+      ? "button is-small"
+      : "button is-link is-small";
+    button.textContent = this.closeText;
+    button.onclick = () => {
+      this.remove();
+      if (this.closeCallback) this.closeCallback();
+    };
+    this.querySelector(".buttons").insertAdjacentElement("beforeend", button);
+
+    // Add event handler for clicking on the modal background
+    if (!this.isSticky) {
+      this.querySelector(".modal-background").onclick = () => {
+        this.remove();
+        if (this.closeCallback) this.closeCallback();
+      };
+    }
+  }
 }
 class SettingsModal extends HTMLElement {
-    setHeading(heading) { this.heading = heading; }
-    setMessage(message) { this.message = message; }
-    setPossibleSettings(settings) { this.settings = settings; }
-    setCurrentElementType(elementType) { this.elementType = elementType; }
-    setCurrentElementOID(currentOID) { this.currentOID = currentOID; }
-    setCurrentSettings(currentSettings) { this.currentSettings = currentSettings }
-    setCloseText(closeText) { this.closeText = closeText; }
-    setCloseCallback(closeCallback) { this.closeCallback = closeCallback; }
-    setSize(size) { this.size = size; }
+  setHeading(heading) {
+    this.heading = heading;
+  }
+  setMessage(message) {
+    this.message = message;
+  }
+  setPossibleSettings(settings) {
+    this.settings = settings;
+  }
+  setCurrentElementType(elementType) {
+    this.elementType = elementType;
+  }
+  setCurrentElementOID(currentOID) {
+    this.currentOID = currentOID;
+  }
+  setCurrentSettings(currentSettings) {
+    this.currentSettings = currentSettings;
+  }
+  setCloseText(closeText) {
+    this.closeText = closeText;
+  }
+  setCloseCallback(closeCallback) {
+    this.closeCallback = closeCallback;
+  }
+  setSize(size) {
+    this.size = size;
+  }
 
-    connectedCallback() {
-        this.innerHTML = `
+  connectedCallback() {
+    this.innerHTML = `
             <div class="modal is-active" id="message-modal">
                 <div class="modal-background"></div>
                 <div class="modal-content ${this.size}">
@@ -296,118 +334,149 @@ class SettingsModal extends HTMLElement {
                 </div>
             </div>
         `;
-        console.log(this.currentSettings);
-        const elementSettings = this.querySelector('#element-settings');
-        this.settings.forEach((settingsArray, name) => {
-            const settingsToBeShown = settingsArray.filter(setting => setting.isInScope(this.elementType));
-            if(settingsToBeShown.length > 0) {
-                if(!this.currentSettings[name]) this.currentSettings[name] = {};
-                let contextDiv = document.createElement('div');
-                contextDiv.classList = 'is-link is-light notification';
-                let h = document.createElement("h1");
-                h.classList = 'title is-4';
-                h.innerText = name;
-                contextDiv.appendChild(h);
+    console.log(this.currentSettings);
+    const elementSettings = this.querySelector("#element-settings");
+    this.settings.forEach((settingsArray, name) => {
+      const settingsToBeShown = settingsArray.filter((setting) =>
+        setting.isInScope(this.elementType)
+      );
+      if (settingsToBeShown.length > 0) {
+        if (!this.currentSettings[name]) this.currentSettings[name] = {};
+        let contextDiv = document.createElement("div");
+        contextDiv.classList = "is-link is-light notification";
+        let h = document.createElement("h1");
+        h.classList = "title is-4";
+        h.innerText = name;
+        contextDiv.appendChild(h);
 
-                settingsToBeShown.forEach(setting => {
-                    let settingDiv = document.createElement('div');
-                    settingDiv.classList = 'field';
-                    let label = document.createElement('label');
-                    label.classList = 'label'
-                    if(typeof setting.i18n != 'undefined') label.setAttribute('i18n', setting.i18n);
-                    else label.innerText = setting.key;
-                    settingDiv.appendChild(label);
+        settingsToBeShown.forEach((setting) => {
+          let settingDiv = document.createElement("div");
+          settingDiv.classList = "field";
+          let label = document.createElement("label");
+          label.classList = "label";
+          if (typeof setting.i18n != "undefined")
+            label.setAttribute("i18n", setting.i18n);
+          else label.innerText = setting.key;
+          settingDiv.appendChild(label);
 
-                    const currentValue = this.currentSettings[name][setting.key];
-                    switch(setting.type) {
-                        case 'boolean': {
-                            let checkBoxLabel = document.createElement('label');
-                            checkBoxLabel.classList = 'checkbox is-block';
-                            let input = document.createElement('input');
-                            input.type = 'checkbox';
-                            input.classList = 'mr-2'
-                            if(currentValue) input.checked = true;
-                            input.onchange = () => {this.currentSettings[name][setting.key] = input.checked; console.log(this.currentSettings)}
-                            let span = document.createElement('span');
-                            span.setAttribute('i18n', typeof setting.description != 'undefined' ? setting.description : 'no-description')
-                            checkBoxLabel.appendChild(input);
-                            checkBoxLabel.appendChild(span);
-                            settingDiv.appendChild(checkBoxLabel);
-                            break;
-                        }
-                        case 'string': {
-                            let fieldDiv = document.createElement('div');
-                            fieldDiv.classList = 'field has-addons';
-                            let div = document.createElement('div');
-                            div.classList = 'control is-expanded';
-                            fieldDiv.appendChild(div);
-                            let input = document.createElement('input');
-                            input.type = 'text';
-                            input.classList = 'input is-small'
-                            if(currentValue) input.value = currentValue;
-                            input.oninput = () => {this.currentSettings[name][setting.key] = input.value; console.log(this.currentSettings)}
-                            input.setAttribute('i18n-ph', typeof setting.i18n != 'undefined' ? setting.i18n : 'no-name')
-                            div.appendChild(input);
-                            settingDiv.appendChild(fieldDiv);
-                            break;
-                        } 
-                        case 'callback': {
-                            let fieldDiv = document.createElement('div');
-                            fieldDiv.classList = 'field has-addons';
-                            let div = document.createElement('div');
-                            div.classList = 'control is-expanded';
-                            fieldDiv.appendChild(div);
-                            let input = document.createElement('input');
-                            input.type = 'text';
-                            input.classList = 'input is-small'
-                            if(currentValue) input.value = currentValue;
-                            input.setAttribute('i18n-ph', typeof setting.i18n != 'undefined' ? setting.i18n : 'no-name')
-                            input.disabled = true;
-                            div.appendChild(input);
-                            let controlDiv = document.createElement('div');
-                            controlDiv.classList = 'control';
-                            fieldDiv.appendChild(controlDiv)
-                            let a = document.createElement('a');
-                            a.classList = 'button is-small is-link';
-                            a.setAttribute('i18n', 'assign-value');
-                            a.onclick = () => window[setting.callback].apply(window, [this.currentOID, (newValue) => { 
-                                input.value = newValue; 
-                                this.currentSettings[name][setting.key] = newValue; 
-                                console.log(newValue) 
-                            }]);
-                            input.onchange = () => { this.currentSettings[name][setting.key] = input.value; console.log(input.value) }
-                            controlDiv.appendChild(a);
-                            settingDiv.appendChild(fieldDiv);
-                            break;
-                        }  
-                    }
-                    contextDiv.appendChild(settingDiv);
-                });
-                elementSettings.appendChild(contextDiv);
+          const currentValue = this.currentSettings[name][setting.key];
+          switch (setting.type) {
+            case "boolean": {
+              let checkBoxLabel = document.createElement("label");
+              checkBoxLabel.classList = "checkbox is-block";
+              let input = document.createElement("input");
+              input.type = "checkbox";
+              input.classList = "mr-2";
+              if (currentValue) input.checked = true;
+              input.onchange = () => {
+                this.currentSettings[name][setting.key] = input.checked;
+                console.log(this.currentSettings);
+              };
+              let span = document.createElement("span");
+              span.setAttribute(
+                "i18n",
+                typeof setting.description != "undefined"
+                  ? setting.description
+                  : "no-description"
+              );
+              checkBoxLabel.appendChild(input);
+              checkBoxLabel.appendChild(span);
+              settingDiv.appendChild(checkBoxLabel);
+              break;
             }
+            case "string": {
+              let fieldDiv = document.createElement("div");
+              fieldDiv.classList = "field has-addons";
+              let div = document.createElement("div");
+              div.classList = "control is-expanded";
+              fieldDiv.appendChild(div);
+              let input = document.createElement("input");
+              input.type = "text";
+              input.classList = "input is-small";
+              if (currentValue) input.value = currentValue;
+              input.oninput = () => {
+                this.currentSettings[name][setting.key] = input.value;
+                console.log(this.currentSettings);
+              };
+              input.setAttribute(
+                "i18n-ph",
+                typeof setting.i18n != "undefined" ? setting.i18n : "no-name"
+              );
+              div.appendChild(input);
+              settingDiv.appendChild(fieldDiv);
+              break;
+            }
+            case "callback": {
+              let fieldDiv = document.createElement("div");
+              fieldDiv.classList = "field has-addons";
+              let div = document.createElement("div");
+              div.classList = "control is-expanded";
+              fieldDiv.appendChild(div);
+              let input = document.createElement("input");
+              input.type = "text";
+              input.classList = "input is-small";
+              if (currentValue) input.value = currentValue;
+              input.setAttribute(
+                "i18n-ph",
+                typeof setting.i18n != "undefined" ? setting.i18n : "no-name"
+              );
+              input.disabled = true;
+              div.appendChild(input);
+              let controlDiv = document.createElement("div");
+              controlDiv.classList = "control";
+              fieldDiv.appendChild(controlDiv);
+              let a = document.createElement("a");
+              a.classList = "button is-small is-link";
+              a.setAttribute("i18n", "assign-value");
+              a.onclick = () =>
+                window[setting.callback].apply(window, [
+                  this.currentOID,
+                  (newValue) => {
+                    input.value = newValue;
+                    this.currentSettings[name][setting.key] = newValue;
+                    console.log(newValue);
+                  },
+                ]);
+              input.onchange = () => {
+                this.currentSettings[name][setting.key] = input.value;
+                console.log(input.value);
+              };
+              controlDiv.appendChild(a);
+              settingDiv.appendChild(fieldDiv);
+              break;
+            }
+          }
+          contextDiv.appendChild(settingDiv);
         });
-        
-        // Add close button
-        let button = document.createElement("button");
-        button.classList = this.callbacks ? "button is-small" : "button is-link is-small";
-        button.textContent = this.closeText;
-        button.onclick = () => {
-            this.remove();
-            if (this.closeCallback) this.closeCallback(this.currentSettings);
-        };
-        this.querySelector(".buttons").insertAdjacentElement("beforeend", button);
+        elementSettings.appendChild(contextDiv);
+      }
+    });
 
-        // Add event handler for clicking on the modal background
-        this.querySelector(".modal-background").onclick = () => {
-            this.remove();
-        };
-    }
+    // Add close button
+    let button = document.createElement("button");
+    button.classList = this.callbacks
+      ? "button is-small"
+      : "button is-link is-small";
+    button.textContent = this.closeText;
+    button.onclick = () => {
+      this.remove();
+      if (this.closeCallback) this.closeCallback(this.currentSettings);
+    };
+    this.querySelector(".buttons").insertAdjacentElement("beforeend", button);
+
+    // Add event handler for clicking on the modal background
+    this.querySelector(".modal-background").onclick = () => {
+      this.remove();
+    };
+  }
 }
 
 class MDMModal extends HTMLElement {
-    setMergeStatus(mergeStatus) { this.mergeStatus = mergeStatus; }
-    connectedCallback() {
-        this.innerHTML = `
+  setMergeStatus(mergeStatus) {
+    this.mergeStatus = mergeStatus;
+  }
+  connectedCallback() {
+    this.innerHTML = `
             <div class="modal" id="mdm-modal">
                 <div class="modal-background"></div>
                 <div class="modal-content is-medium is-fullheight-mobile">
@@ -428,10 +497,10 @@ class MDMModal extends HTMLElement {
                 </div>
             </div>
         `;
-        this.querySelector(".modal-background").onclick = () => {
-            this.remove();
-        };
-    }  
+    this.querySelector(".modal-background").onclick = () => {
+      this.remove();
+    };
+  }
 }
 
 window.customElements.define("start-modal", StartModal);
