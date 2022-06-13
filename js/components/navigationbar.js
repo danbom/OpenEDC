@@ -1,7 +1,7 @@
 class NavigationBar extends HTMLElement {
-    connectedCallback() {
-        this.innerHTML = `
-            <nav class="navbar is-fixed-top has-shadow is-hidden">
+  connectedCallback() {
+    this.innerHTML = `
+            <nav class="navbar is-fixed-top is-hidden">
                 <div class="navbar-brand">
                     <div class="navbar-item">
                         <h1 class="subtitle" id="study-title"></h1>
@@ -30,9 +30,9 @@ class NavigationBar extends HTMLElement {
                         <div class="navbar-item">
                             <div class="buttons">
                                 <button class="button is-hidden" id="store-metadata-async-button" onclick="storeMetadataAsync()" i18n="save-forms"></button>
-                                <button class="button is-light is-hidden" id="close-example-button" onclick="removeAllData()" i18n="close-example"></button>
-                                <button class="button" id="export-modal-button" onclick="showExportDataModal()" i18n="export-data"></button>
-                                <button class="button" id="project-modal-button" onclick="showProjectModal()" i18n="project-options"></button>
+                                <button class="button is-light is-hidden" id="close-example-button" onclick="removeAllData()"><i class="fa-solid fa-xmark"></i><span i18n="close-example"></span></button>
+                                <button class="button" id="export-modal-button" onclick="showExportDataModal()"><i class="fa-solid fa-file-export"></i><span i18n="export-data"></span></button>
+                                <button class="button" id="project-modal-button" onclick="showProjectModal()"><i class="fa-solid fa-gear"></i><span i18n="project-options"></span></button>
                                 <div class="dropdown is-right" id="app-mode-button">
                                     <div class="dropdown-trigger">
                                         <button class="button is-link is-light">
@@ -85,7 +85,7 @@ class NavigationBar extends HTMLElement {
                 </div>
             </nav>
         `;
-    }
+  }
 }
 
 window.customElements.define("navigation-bar", NavigationBar);

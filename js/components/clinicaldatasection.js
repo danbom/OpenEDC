@@ -1,11 +1,11 @@
 class ClinicaldataSection extends HTMLElement {
-    connectedCallback() {
-        this.innerHTML = `
+  connectedCallback() {
+    this.innerHTML = `
             <section class="section is-hidden" id="clinicaldata-section">
                 <div class="columns is-desktop">
                     <div class="column is-one-fifth-desktop" id="subjects-column">
                         <nav class="panel is-link">
-                            <p class="panel-heading has-text-centered" i18n="subjects"></p>
+                            <p class="panel-heading" i18n="subjects"></p>
                             <div class="panel-block has-no-padding-bottom has-no-border-bottom subject-key-mode-element">
                                 <div class="field is-grouped is-fullwidth" id="subject-key-mode-manual-element">
                                     <div class="control is-expanded has-icons-left">
@@ -73,19 +73,19 @@ class ClinicaldataSection extends HTMLElement {
                     </div>
                     <div class="column is-one-fifth-desktop is-hidden-touch" id="clinicaldata-study-events-column">
                         <nav class="panel is-link">
-                            <p class="panel-heading has-text-centered" i18n="events"></p>
+                            <p class="panel-heading" i18n="events"></p>
                             <div class="tree-panel-blocks" id="clinicaldata-study-event-panel-blocks"></div>
                         </nav>
                     </div>
                     <div class="column is-one-fifth-desktop is-hidden-touch" id="clinicaldata-forms-column">
                         <nav class="panel is-link">
-                            <p class="panel-heading has-text-centered" i18n="forms"></p>
+                            <p class="panel-heading" i18n="forms"></p>
                             <div class="tree-panel-blocks" id="clinicaldata-form-panel-blocks"></div>
                         </nav>
                     </div>
                     <div class="column is-hidden-touch" id="clinicaldata-column">
                         <nav class="panel is-link">
-                            <p class="panel-heading has-text-centered" i18n="data"></p>
+                            <p class="panel-heading" i18n="data"></p>
                             <div class="tree-panel-blocks">
                                 <div class="is-hidden" id="clinicaldata-form-data">
                                     <article class="message is-hidden" id="form-hint">
@@ -145,7 +145,7 @@ class ClinicaldataSection extends HTMLElement {
                 </div>
             </section>
         `;
-    }
+  }
 }
 
 window.customElements.define("clinicaldata-section", ClinicaldataSection);
