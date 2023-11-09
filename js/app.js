@@ -15,7 +15,7 @@ import * as repositoryHelper from "./helper/repositoryhelper.js";
 
 const appVersion = "0.8.1";
 
-const appModes = {
+export const appModes = {
     METADATA: "metadata",
     CLINICALDATA: "clinicaldata",
     REPORTS: "reports"
@@ -55,16 +55,16 @@ ioHelper.addGlobalEventListener("DOMContentLoaded", async () => {
 
     // Initialize the application
     await metadataWrapper.loadStoredMetadata()
-        .then(() => {
-            startApp();
-        })
-        .catch(error => {
-            if (error.code == ioHelper.loadXMLExceptionCodes.NODATAFOUND && !ioHelper.hasServerURL()) showStartModal();
-            else if (error.code == ioHelper.loadXMLExceptionCodes.DATAENCRYPTED) showDecryptionKeyModal();
-        });
+    .then(async () => {
+        await startApp();
+        handleURLSearchParameters();
+    })
+    .catch(error => {
+        console.log(error);
+        if (error.code == ioHelper.loadXMLExceptionCodes.NODATAFOUND && !ioHelper.hasServerURL()) showStartModal();
+        else if (error.code == ioHelper.loadXMLExceptionCodes.DATAENCRYPTED) showDecryptionKeyModal();
+    });
 
-    // Handle URL search / query parameters (e.g., for metadata repository integration)
-    handleURLSearchParameters();
 
     // Register service worker for offline capabilities
     const developmentOrigins = ["localhost", "127.0.0.1", "dev.openedc.org"];
@@ -95,7 +95,6 @@ const startApp = async () => {
     await metadataModule.init();
     await admindataModule.init();
     await clinicaldataModule.init();
-
     // Last UI adjustments
     setTitles();
     hideStartModal();
@@ -372,14 +371,20 @@ window.hideExportModal = function() {
 }
 
 window.showProjectModal = function() {
-    if (ioHelper.hasDecryptionKey()) {
+    const disabledEncryption = ioHelper.getSetting("disableEncryption");
+    if (ioHelper.hasDecryptionKey() || ioHelper.hasServerURL()) {
         $("#project-modal #encryption-password-input").parentNode.parentNode.hide();
         $("#project-modal #data-encryption-warning").hide();
-        $("#project-modal #data-encrypted-hint").show();
+        $(`#project-modal #data-${disabledEncryption ? 'not-' : ''}encrypted-hint`).show();
     }
     if (ioHelper.hasServerURL()) {
         $("#project-modal #server-url-input").parentNode.parentNode.hide();
+        $("#project-modal #server-connect-no-encryption").parentNode.hide();
         $("#project-modal #server-connected-hint").show();
+    }
+
+    if(disabledEncryption || !ioHelper.hasServerURL()) {
+        $('#deactivate-encryption-button').parentNode.hide(); 
     }
 
     const subjectKeyModeRadio = $(`#${ioHelper.getSetting("subjectKeyMode")}`);
@@ -387,6 +392,7 @@ window.showProjectModal = function() {
 
     $("#survey-code-input").value = ioHelper.getSetting("surveyCode");
     $("#show-as-likert").checked = ioHelper.getSetting("showLikertScale");
+    $("#likert-scale-limit-input").value = ioHelper.getSetting("likertScaleLimit")??'';
     $("#show-element-name").checked = ioHelper.getSetting("showElementName");
     $("#text-as-textarea-checkbox").checked = ioHelper.getSetting("textAsTextarea");
     $("#auto-survey-view-checkbox").checked = ioHelper.getSetting("autoSurveyView");
@@ -454,7 +460,7 @@ window.connectToServer = function() {
                 case ioHelper.serverStatus.SERVERINITIALIZED:
                     ioHelper.showMessage(languageHelper.getTranslation("note"), languageHelper.getTranslation("server-initialized-hint"),
                         {
-                            [languageHelper.getTranslation("open-server")]: () => window.location.href = "https://" + serverURL
+                            [languageHelper.getTranslation("open-server")]: () => window.location.href = serverURL
                         }
                     );
             }
@@ -468,6 +474,7 @@ window.initializeServer = function(event) {
     const username = $("#owner-username-input").value;
     const password = $("#owner-password-input").value;
     const confirmPassword = $("#owner-confirm-password-input").value;
+    const disableEncryption = $("#server-connect-no-encryption").checked;
     const credentials = new ioHelper.Credentials(username, password, confirmPassword);
     if (credentials.error) {
         // TODO: This could be improved in the future -- passing the error to the languageHelper is not very nice
@@ -480,7 +487,7 @@ window.initializeServer = function(event) {
     const serverURL = $("#server-url-input").value;
     const userOID = admindataWrapper.getCurrentUserOID();
     event.target.showLoading();
-    ioHelper.initializeServer(serverURL, userOID, credentials)
+    ioHelper.initializeServer(serverURL, userOID, credentials, disableEncryption)
         .then(serverURL => window.location.replace(serverURL))
         .catch(() => event.target.hideLoading());
 }
@@ -507,6 +514,29 @@ window.encryptData = function(event) {
         .catch(() => event.target.hideLoading());
 }
 
+window.showDeactivateEncryptionDialog = () => {
+    ioHelper.showMessage(languageHelper.getTranslation('deactivate-encryption'), languageHelper.getTranslation('deactivate-encryption-hint'), 
+    {
+        [languageHelper.getTranslation('deactivate')] : () => deactivateEncryption()
+    })
+}
+
+const deactivateEncryption = async () => {
+    
+    await clinicaldataWrapper.deactivateEncryptionForSubjects();
+    console.log("clinicaldata stored");
+    await ioHelper.deactivateServerEncryption();
+    await metadataWrapper.storeMetadata();
+    console.log("metadata stored");
+    await admindataWrapper.storeAdmindata();
+    console.log("admindata stored");
+    ioHelper.showToast(languageHelper.getTranslation('deactivate-encryption-successful'))
+    $('#deactivate-encryption-button').parentNode.hide(); 
+    $(`#project-modal #data-encrypted-hint`).hide();
+    $(`#project-modal #data-not-encrypted-hint`).show();
+
+}
+
 window.setSurveyCode = function() {
     const surveyCode = $("#survey-code-input").value;
     if (surveyCode.length == 0 || (parseInt(surveyCode) == surveyCode && surveyCode.length == 4)) {
@@ -514,6 +544,17 @@ window.setSurveyCode = function() {
         hideProjectModal();
     } else {
         ioHelper.showMessage(languageHelper.getTranslation("error"), languageHelper.getTranslation("survey-code-error"));
+    }
+}
+
+window.setLikertScaleLimit = function() {
+    const limit = $("#likert-scale-limit-input").value;
+    if (limit.length == 0 || parseInt(limit) == limit) {
+        ioHelper.setSetting("likertScaleLimit", limit);
+        ioHelper.showToast(languageHelper.getTranslation('forms-saved-hint'), 4000, ioHelper.interactionTypes.SUCCESS);
+        reloadApp();
+    } else {
+        ioHelper.showMessage(languageHelper.getTranslation("error"), languageHelper.getTranslation("likert-limit-error"));
     }
 }
 
@@ -672,7 +713,7 @@ export function setIOListeners() {
     $("#language-navbar-item").addEventListener("mouseleave", () => $("#language-navbar-item").deactivate());
 }
 
-function enableMode(mode) {
+export function enableMode(mode) {
     if (clinicaldataModule.safeCloseClinicaldata(() => enableMode(mode))) return;
 
     $("#metadata-section").hide();
@@ -738,11 +779,10 @@ async function handleURLSearchParameters() {
 
     // Get models from metadata repositories and merge them
     const repositoryHelper = await import("./helper/repositoryhelper.js");
-    repositoryHelper.getModels(urlParams)
+    await repositoryHelper.getModels(urlParams)
         .then(models => {
             if (!models) return;
-            window.history.replaceState(null, appVersion, ioHelper.getBaseURL());
-            
+             
             if (getCurrentState() == appStates.EMPTY) mergeMetadataModels(models);
             else if (getCurrentState() == appStates.UNLOCKED) {
                 ioHelper.showMessage(languageHelper.getTranslation("import-forms"), languageHelper.getTranslation("import-forms-merge-hint"),
@@ -758,6 +798,8 @@ async function handleURLSearchParameters() {
             } else ioHelper.showMessage(languageHelper.getTranslation("Note"), languageHelper.getTranslation("forms-import-encrypted-hint"));
         })
         .catch(error => ioHelper.showMessage(languageHelper.getTranslation("Error"), languageHelper.getTranslation("forms-import-error")));
+    repositoryHelper.preloadPage(urlParams);
+    window.history.replaceState(null, appVersion, ioHelper.getBaseURL());
 }
 
 function mergeMetadataModels(models) {

@@ -296,7 +296,6 @@ class SettingsModal extends HTMLElement {
                 </div>
             </div>
         `;
-        console.log(this.currentSettings);
         const elementSettings = this.querySelector('#element-settings');
         this.settings.forEach((settingsArray, name) => {
             const settingsToBeShown = settingsArray.filter(setting => setting.isInScope(this.elementType));
@@ -327,7 +326,7 @@ class SettingsModal extends HTMLElement {
                             input.type = 'checkbox';
                             input.classList = 'mr-2'
                             if(currentValue) input.checked = true;
-                            input.onchange = () => {this.currentSettings[name][setting.key] = input.checked; console.log(this.currentSettings)}
+                            input.onchange = () => {this.currentSettings[name][setting.key] = input.checked}
                             let span = document.createElement('span');
                             span.setAttribute('i18n', typeof setting.description != 'undefined' ? setting.description : 'no-description')
                             checkBoxLabel.appendChild(input);
@@ -335,20 +334,54 @@ class SettingsModal extends HTMLElement {
                             settingDiv.appendChild(checkBoxLabel);
                             break;
                         }
-                        case 'string': {
+                        case 'string': 
+                        case 'number': {
                             let fieldDiv = document.createElement('div');
                             fieldDiv.classList = 'field has-addons';
                             let div = document.createElement('div');
                             div.classList = 'control is-expanded';
                             fieldDiv.appendChild(div);
+                            if(typeof setting.description != 'undefined') {
+                                let span = document.createElement('span');
+                                span.setAttribute('i18n', setting.description)
+                                div.appendChild(span)
+                            }
                             let input = document.createElement('input');
                             input.type = 'text';
                             input.classList = 'input is-small'
                             if(currentValue) input.value = currentValue;
-                            input.oninput = () => {this.currentSettings[name][setting.key] = input.value; console.log(this.currentSettings)}
+                            input.oninput = () => {this.currentSettings[name][setting.key] = input.value}
                             input.setAttribute('i18n-ph', typeof setting.i18n != 'undefined' ? setting.i18n : 'no-name')
                             div.appendChild(input);
                             settingDiv.appendChild(fieldDiv);
+                            break;
+                        } 
+                        case 'options': {
+                            (async () => {
+                               const htmlElements = await import("../helper/htmlelements.js");
+                               const languageHelper = await import("../helper/languagehelper.js");
+
+                            let fieldDiv = document.createElement('div');
+                            fieldDiv.classList = 'field has-addons';
+                            let div = document.createElement('div');
+                            div.classList = 'control is-expanded';
+                            fieldDiv.appendChild(div);
+                            if(typeof setting.description != 'undefined') {
+                                let span = document.createElement('span');
+                                span.setAttribute('i18n', setting.description)
+                                div.appendChild(span)
+                            }
+                            let selectDiv = document.createElement('div');
+                            selectDiv.classList = 'select is-fullwidth'
+                            let select = htmlElements.getSelect(`${setting.key}-select`, true, true, setting.options, currentValue, setting.options.map(option => languageHelper.getTranslation(option)), true);
+                            selectDiv.appendChild(select)
+
+                            select.querySelector(`#${setting.key}-select-inner`).oninput = (event) => {this.currentSettings[name][setting.key] = event.target.value}
+                            //input.setAttribute('i18n-ph', typeof setting.i18n != 'undefined' ? setting.i18n : 'no-name')
+                            div.appendChild(selectDiv);
+                            settingDiv.appendChild(fieldDiv);
+                            })();
+                            
                             break;
                         } 
                         case 'callback': {
@@ -373,9 +406,8 @@ class SettingsModal extends HTMLElement {
                             a.onclick = () => window[setting.callback].apply(window, [this.currentOID, (newValue) => { 
                                 input.value = newValue; 
                                 this.currentSettings[name][setting.key] = newValue; 
-                                console.log(newValue) 
                             }]);
-                            input.onchange = () => { this.currentSettings[name][setting.key] = input.value; console.log(input.value) }
+                            input.onchange = () => this.currentSettings[name][setting.key] = input.value;
                             controlDiv.appendChild(a);
                             settingDiv.appendChild(fieldDiv);
                             break;
@@ -416,13 +448,13 @@ class MDMModal extends HTMLElement {
                         <p i18n="load-from-mdm-text"></p>
                         <label class="label has-text-left mt-3" i18n="load-from-mdm-label"></label>
                         <div class="field has-addons">
-                                <div class="control is-expanded">
-                                    <input class="input is-link" type="text" autocomplete="off" i18n-ph="load-from-mdm-input" term" autocomplete-mode="1" id="load-from-mdm-input">
-                                </div>
-                                <div class="control">
-                                    <a class="button is-link" id="load-from-mdm-confirm" i18n="confirm" onclick="importFromMDMPortal(${this.mergeStatus})"></a>
-                                </div>
+                            <div class="control is-expanded">
+                                <input class="input is-link" type="text" autocomplete="off" i18n-ph="load-from-mdm-input" term" autocomplete-mode="1" id="load-from-mdm-input">
                             </div>
+                            <div class="control">
+                                <a class="button is-link" id="load-from-mdm-confirm" i18n="confirm" onclick="importFromMDMPortal(${this.mergeStatus})"></a>
+                            </div>
+                        </div>
                         <p class="has-text-danger is-hidden" id="wrong-survey-code-hint" i18n="wrong-survey-code-hint"></p>
                     </div>
                 </div>
@@ -434,6 +466,62 @@ class MDMModal extends HTMLElement {
     }  
 }
 
+class FormImageModal extends HTMLElement {
+    setFormImageData(formImageData) { this.formImageData = formImageData; }
+    setSaveCallback(callback) {this.callback = callback; }
+    connectedCallback() {
+        this.innerHTML = `
+            <div class="modal is-active" id="form-image-modal">
+                <div class="modal-background"></div>
+                <div class="modal-content is-medium is-fullheight-mobile">
+                    <div class="box" id="form-image-modal-elements">
+                        <h2 class="subtitle" i18n="edit-image-heading"></h2>
+                    </div>
+                </div>
+            </div>
+        `;
+        this.querySelector(".modal-background").onclick = () => {
+            this.callback(this.formImageData);
+            this.remove();
+        };
+        
+        if(!this.formImageData.format) this.formImageData.format = 'png';
+
+        let elementsDiv = this.querySelector('#form-image-modal-elements');
+        let img = document.createElement('img');
+        Object.entries(this.formImageData).forEach(([key, value]) => {
+            let field = document.createElement('div');
+            field.classList = "field";
+            let label = document.createElement("label");
+            label.classList = "label";
+            label.setAttribute("i18n", key);
+            let inputElement;
+            if(key == 'base64Data'){
+                inputElement = document.createElement('textarea')
+                inputElement.classList = 'textarea';
+            }
+            else {
+                inputElement = document.createElement('input')
+                inputElement.classList = "input";
+                inputElement.type = "text";  
+            }
+            inputElement.placeholder = key;
+            inputElement.value = value??'';
+            inputElement.onblur = () => {this.formImageData[key] = inputElement.value; this.setFormImageDataToImage(img)};
+            field.appendChild(label);
+            field.appendChild(inputElement)
+            elementsDiv.appendChild(field);
+        })
+        this.setFormImageDataToImage(img);
+        elementsDiv.appendChild(img);
+    }  
+
+    setFormImageDataToImage(img) {
+        img.src = `data:image/${this.formImageData.format};${this.formImageData.type},${this.formImageData.base64Data}`;
+        img.style = `width: ${this.formImageData.width}`
+    }
+}
+
 window.customElements.define("start-modal", StartModal);
 window.customElements.define("login-modal", LoginModal);
 window.customElements.define("about-modal", AboutModal);
@@ -442,3 +530,4 @@ window.customElements.define("survey-code-modal", SurveyCodeModal);
 window.customElements.define("message-modal", MessageModal);
 window.customElements.define("settings-modal", SettingsModal);
 window.customElements.define("mdm-modal", MDMModal);
+window.customElements.define("form-image-modal", FormImageModal);

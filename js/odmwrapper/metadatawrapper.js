@@ -20,19 +20,20 @@ class MetadataFile {
 }
 
 class OpenEDCSetting {
-    constructor(context, {key, i18n, description, type, callback, scope}){
+    constructor(context, {key, i18n, description, type, options, callback, scope}){
         this.context = context;
         this.key = key;
         this.i18n = i18n;
         this.description = description;
         this.type = type;
+        this.options = options;
         this.callback = callback;
         this.scope = scope;
     }
 
     static parse(context, jsonString) {
         const data = JSON.parse(jsonString);
-        return new OpenEDCSetting(context, data.key, data.i18n, data.description, data.type, data.callback, data.scope)
+        return new OpenEDCSetting(context, data.key, data.i18n, data.description, data.type, data.options, data.callback, data.scope)
     }
 
     isInScope(scope){
@@ -40,6 +41,21 @@ class OpenEDCSetting {
     }
 
 }
+
+export class FormImage{
+    constructor( format, base64Data, width, name) {
+        this.type = 'base64';
+        this.format = format;
+        this.base64Data = base64Data;
+        this.width = width;
+        this.name = name;
+    }
+}
+
+let formImageDataMap = {}
+export const defaultCodeListItemImageWidth = 40;
+export const defaultItemImageWidth = '100%'
+
 export let loadedSettings = new Map();
 export const OPENEDC_SETTINGS_ALIAS_CONTEXT = 'openedc-settings';
 export const SETTINGS_CONTEXT = "OpenEDC";
@@ -68,6 +84,11 @@ export const dataTypes = {
 };
 
 export const mandatoryTypes = {
+    YES: "Yes",
+    NO: "No"
+}
+
+export const repeatingTypes = {
     YES: "Yes",
     NO: "No"
 }
@@ -138,15 +159,19 @@ export function removeMetadata() {
     metadata = null;
 }
 
-export async function getFormAsHTML(formOID, textAsTextarea = false, useNames = false) {
+export async function getFormAsHTML(formOID, textAsTextarea = false, useItemNames = false, useItemGroupNames = false) {
     return htmlConverter.getFormAsHTML(formOID, {
+        defaultCodeListItemImageWidth,
+        defaultItemImageWidth,
         locale: languageHelper.getCurrentLocale(),
         missingTranslation: languageHelper.getTranslation("missing-translation"),
         yes: languageHelper.getTranslation("yes"),
         no: languageHelper.getTranslation("no"),
         textAsTextarea: textAsTextarea,
-        useNames: useNames,
-        showAsLikert: ioHelper.getSetting("showLikertScale")
+        useItemNames,
+        useItemGroupNames,
+        showAsLikert: ioHelper.getSetting("showLikertScale"),
+        likertScaleLimit: ioHelper.getSetting("likertScaleLimit")
     });
 }
 
@@ -335,6 +360,20 @@ export function getItemOIDsWithDataType(dataType) {
     return Array.from($$(`ItemDef[DataType="${dataType}"]`)).map(item => item.getOID());
 }
 
+export function getElementsWithExpressionIncludeForms(studyEventOID, formOID) {
+    if(!studyEventOID) return [];
+    let elementsWithExpression = [];
+    for (const formRef of $$(`StudyEventDef[OID="${studyEventOID}"] FormRef`)) {
+        const formRefOID = formRef.getAttribute("FormOID");
+        if(!formOID  || formOID === formRefOID) {
+            const conditionOID = formRef.getAttribute("CollectionExceptionConditionOID");
+            if (conditionOID) elementsWithExpression = addElementWithExpression(elementsWithExpression, ODMPath.elements.FORM, new ODMPath(studyEventOID, formRefOID), conditionOID, expressionTypes.CONDITION);
+            elementsWithExpression = elementsWithExpression.concat(getElementsWithExpression(studyEventOID, formRefOID));
+        }
+    }
+    return elementsWithExpression;
+
+}
 export function getElementsWithExpression(studyEventOID, formOID) {
     let elementsWithExpression = [];
     for (const itemGroupRef of $$(`FormDef[OID="${formOID}"] ItemGroupRef`)) {
@@ -412,6 +451,9 @@ export function getMeasurementUnits() {
 export function getElementCondition(elementType, path) {
     let conditionRef;
     switch (elementType) {
+        case ODMPath.elements.FORM: 
+            if(path.studyEventOID) conditionRef = $(`StudyEventDef[OID="${path.studyEventOID}"] FormRef[FormOID="${path.formOID}"][CollectionExceptionConditionOID]`);
+            break;
         case ODMPath.elements.ITEMGROUP:
             conditionRef = $(`FormDef[OID="${path.formOID}"] ItemGroupRef[ItemGroupOID="${path.itemGroupOID}"][CollectionExceptionConditionOID]`);
             break;
@@ -431,6 +473,19 @@ export function getItemMethod(path) {
         let oid = methodRef.getAttribute("MethodOID");
         return $(`MethodDef[OID="${oid}"]`);
     }
+}
+
+export function getStudyEventRepeating(studyEventOID) {
+    // Ad hoc implementation, improve for OpenEDC 2.0
+    return $(`StudyEventDef[OID="${studyEventOID}"]`)?.getAttribute("Repeating") ?? repeatingTypes.NO;
+}
+
+export function setStudyEventRepeating(studyEventOID, repeating) {
+    $(`StudyEventDef[OID="${studyEventOID}"]`).setAttribute("Repeating", repeating);
+}
+
+export function isStudyEventRepeating(studyEventOID) {
+    return $(`StudyEventDef[OID="${studyEventOID}"]`).getAttribute('Repeating') && $(`StudyEventDef[OID="${studyEventOID}"]`).getAttribute('Repeating') == "Yes";
 }
 
 export function getItemMeasurementUnit(itemOID) {
@@ -963,7 +1018,6 @@ export function copyStudyEvent(studyEventOID, deepCopy) {
             formRef.setAttribute("FormOID", newFormOID);
             replacedOIDs = info.replacedOIDs;
         }
-        console.log(replacedOIDs);
     }
     
     return {newStudyEventOID};
@@ -1046,6 +1100,11 @@ export function copyItem(itemOID, deepCopy, itemGroupOID, replacedOIDs = {}) {
             let newMethodOID = copyMethodDef(methodOID, replacedOIDs);
             $(`ItemGroupDef[OID="${itemGroupOID}"] ItemRef[ItemOID="${newItemOID}"]`).setAttribute('MethodOID', newMethodOID)
         }
+
+        let mandatory = itemRef.getAttribute('Mandatory');
+        if(mandatory) {
+            $(`ItemGroupDef[OID="${itemGroupOID}"] ItemRef[ItemOID="${newItemOID}"]`).setAttribute('Mandatory', mandatory);
+        }
     }
 
     let itemDef = $(`ItemDef[OID="${itemOID}"]`);
@@ -1083,7 +1142,7 @@ function copyConditionDef(conditionDefOID, replacedOIDs) {
     conditionDefClone.setAttribute("OID", newConditionDefOID);
     if(replacedOIDs){
         Object.keys(replacedOIDs).forEach(oldOID => {
-            conditionDefClone.querySelector("FormalExpression").textContent = conditionDefClone.querySelector("FormalExpression").textContent.replace(new RegExp(oldOID, "g"), replacedOIDs[oldOID]);
+            conditionDefClone.querySelector("FormalExpression").textContent = conditionDefClone.querySelector("FormalExpression").textContent.replace(new RegExp(`${oldOID}([\\s*\\/+<>^=?:()-]|$)`, "g"), `${replacedOIDs[oldOID]}$1`);
         });
     }
     conditionDef.insertAdjacentElement("afterend", conditionDefClone);
@@ -1097,7 +1156,7 @@ function copyMethodDef(methodOID, replacedOIDs) {
     methodDefClone.setAttribute("OID", newMethodOID);
     if(replacedOIDs){
         Object.keys(replacedOIDs).forEach(oldOID => {
-            methodDefClone.querySelector("FormalExpression").textContent = methodDefClone.querySelector("FormalExpression").textContent.replace(new RegExp(oldOID, "g"), replacedOIDs[oldOID]);
+            methodDefClone.querySelector("FormalExpression").textContent = methodDefClone.querySelector("FormalExpression").textContent.replace(new RegExp(`${oldOID}([\\s*\\/+<>^=?:()-]|$)`, "g"), `${replacedOIDs[oldOID]}$1`);
         });
     }
     methodDef.insertAdjacentElement("afterend", methodDefClone);
@@ -1150,8 +1209,6 @@ export async function mergeMetadata(odmXMLString) {
         const odm = new DOMParser().parseFromString(odmXMLString, "text/xml");
         let conditionDefs = odm.querySelectorAll("ConditionDef");
         let methodDefs = odm.querySelectorAll("MethodDef");
-        console.log(replaceOIDs);
-        console.log(Object.keys(replaceOIDs));
         Object.keys(replaceOIDs).forEach(oldOID => {
             conditionDefs.forEach(c => {
                 c.querySelector("FormalExpression").textContent = c.querySelector("FormalExpression").textContent.replace(new RegExp(oldOID, "g"), replaceOIDs[oldOID]);
@@ -1174,10 +1231,64 @@ export async function mergeMetadata(odmXMLString) {
         odm.querySelectorAll("ItemDef").forEach(itemDef => insertElementDef(itemDef));
         odm.querySelectorAll("CodeList").forEach(codeList => insertElementDef(codeList));
         odm.querySelectorAll("ConditionDef").forEach(conditionDef => insertElementDef(conditionDef));
-        odm.querySelectorAll("MethodDef").forEach(conditionDef => insertElementDef(conditionDef));
+        odm.querySelectorAll("MethodDef").forEach(methodDef => insertElementDef(methodDef));
     }
 
     await storeMetadata();
+}
+
+export function extractImageInfo(imageString, identifier) {
+    if(!imageString.startsWith("![")) return {data: null, identifier: null};
+
+    let name;
+    let nameArray = imageString.match(/!\[[^\]]+?\]/);
+    if(nameArray && nameArray.length > 0) {
+        name = nameArray[0].replace('!', '').replace('[','').replace(']','');
+    }
+
+    let format = undefined;
+    let width = undefined;
+    let base64Data = undefined;
+
+    let dataArray = imageString.match(/\(data.*?\)/);
+    if(dataArray && dataArray.length > 0) {
+        let data = dataArray[0];
+
+        let formatArray = data.match(/image\/[a-z]+?;/);
+        if(formatArray && formatArray.length > 0){
+            format = formatArray[0].substring(formatArray[0].indexOf('/') + 1, formatArray[0].indexOf(';'));
+        }
+
+        const base64DataArray = data.split(',');
+        if(base64DataArray.length > 1) base64Data = base64DataArray[1].replace(')','');
+    }
+
+    let settingsArray = imageString.match(/\[(?:[a-z]+:.*?;?)+\]/);
+    if(settingsArray && settingsArray.length > 0) {
+        let innerSplits = settingsArray[0].split(';');
+        let widthSplit = innerSplits.find(innerSplit => innerSplit.split(":")[0].includes("width"));
+        if(widthSplit) widthSplit = widthSplit.split(":");
+        width = widthSplit && widthSplit.length == 2 ? widthSplit[1].replace(";","") : undefined;
+    }
+
+    identifier = identifier || makeid(20);;
+    formImageDataMap[identifier] = new FormImage(format, base64Data, width, name);
+    return {data: formImageDataMap[identifier], identifier}
+    
+}
+
+export function getFormImageData(identifier) {
+    return {data: formImageDataMap[identifier], identifier};
+}
+
+export function updateFormImageData(identifier, formImageData) {
+    if(!identifier) return;
+    formImageDataMap[identifier] = formImageData;
+}
+
+export function getImageSplitsForString(string) {
+    if(!string) return [];
+    return string.split(/(!\[.*?\](?:\(data:image\/[a-z]+;base64,[a-zA-Z0-9\/+=]+\))?(?:\[(?:[a-z]+:[a-zA-Z0-9%]+?)+;\])?)/g);
 }
 
 export function loadPossibleOpenEDCSettings() {
@@ -1189,7 +1300,6 @@ export function loadPossibleOpenEDCSettings() {
 export function loadSettings(context, data) {
     loadedSettings.set(context, []);
     data.forEach(d => loadedSettings.get(context).push(new OpenEDCSetting(context, d)))
-    console.log(loadedSettings)
 }
 
 export function getCurrentElementSettings(path) {
@@ -1231,4 +1341,14 @@ export function setCurrentElementSettingsByOID(oid, settings) {
     const alias = [...aliasses].find(a => a.getAttribute('Context') == OPENEDC_SETTINGS_ALIAS_CONTEXT);
     if(alias) alias.setAttribute('Name', JSON.stringify(settings));
     else setElementAlias(path, OPENEDC_SETTINGS_ALIAS_CONTEXT, JSON.stringify(settings));
+}
+
+function makeid(length) {
+    var result           = '';
+    var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    var charactersLength = characters.length;
+    for ( var i = 0; i < length; i++ ) {
+        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    return result;
 }

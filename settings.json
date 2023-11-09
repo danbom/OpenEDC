@@ -14,7 +14,26 @@
         "description": "no-survey-description",
         "type": "boolean",
         "scope": [
+            "form", "itemgroup", "item"
+        ]
+    },
+    {
+        "key": "codelistitem-image-width",
+        "i18n": "codelistitem-image-width",
+        "description": "codelistitem-image-width-description",
+        "type": "number",
+        "scope": [
             "itemgroup", "item"
+        ]
+    },
+    {
+        "key": "presentation-type",
+        "i18n": "presentation-type",
+        "description": "presentation-type-description",
+        "type": "options",
+        "options": ["default", "next-to-each-other"],
+        "scope": [
+            "item"
         ]
     }
 ]   

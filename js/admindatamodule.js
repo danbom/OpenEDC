@@ -11,6 +11,10 @@ export async function init() {
     await admindataWrapper.loadStoredAdmindata().catch(() => admindataWrapper.loadEmptyProject());
 }
 
+window.reloadUsers = () => {
+    loadUsers();
+}
+
 export async function loadUsers() {
     $$("#users-options .panel a").removeElements();
     $$("#user-rights .checkbox").removeElements();
@@ -130,6 +134,17 @@ window.saveUser = async function() {
     if (userOID == admindataWrapper.getCurrentUserOID()) ioHelper.dispatchGlobalEvent("CurrentUserEdited");
     
     loadUsers();
+}
+
+window.showRemoveUserModal = function() {
+    const userOID = $("#users-options .panel a.is-active").getOID();
+    if(ioHelper.getLoggedInUser().oid === userOID) {
+        ioHelper.showMessage(languageHelper.getTranslation("no-self-delete"), languageHelper.getTranslation("no-self-delete-text"));
+        return;
+    }
+    ioHelper.showMessage(languageHelper.getTranslation('remove-user'), languageHelper.getTranslation("remove-user-hint"), {
+        [languageHelper.getTranslation("yes")]: () => removeUser(),
+    })
 }
 
 window.removeUser = function() {
